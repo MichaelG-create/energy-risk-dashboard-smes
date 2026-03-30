@@ -26,7 +26,24 @@ This project builds an end-to-end data pipeline that connects historical energy 
 
 ## How to run (WIP)
 
-1. Create a GCP project and a BigQuery dataset (e.g. `energy_risk`).
+1. At https://console.cloud.google.com/ , create a GCP project, a GCS bucket and a BigQuery dataset (e.g. `energy_risk`) or directly with gcloud:
+```bash
+# Create a project (replace PROJECT_ID by your unique project ID)
+gcloud projects create PROJECT_ID
+
+# select your project as active project
+gcloud config set project PROJECT_ID
+
+# Create a GCS bucket (replace BUCKET_NAME by a unique ID, ex: energy-risk-bucket-xxxx)
+gsutil mb -l EU gs://energy-risk-bucket-123456/
+
+# activate BigQuery
+gcloud services enable bigquery.googleapis.com
+
+# create the dataset
+bq --location=EU mk --dataset PROJECT_ID:energy_risk
+
+```
 2. Configure credentials locally so Python and dbt can access BigQuery.
 3. Run the ingestion script/notebook to load energy data into `raw_energy_prices`.
 4. Run dbt to build staging and mart models.
