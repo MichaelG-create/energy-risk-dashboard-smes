@@ -1,4 +1,11 @@
-segment,avg_kwh_per_day,energy_cost_share,base_margin_pct
-small_retail,50,0.15,0.20
-small_manufacturing,500,0.25,0.18
-restaurant,200,0.30,0.22
+segment,segment_size,industry,avg_kwh_per_day,energy_cost_share,base_margin_pct
+small_retail,small,retail,50,0.15,0.20
+small_manufacturing,small,manufacturing,500,0.25,0.18
+restaurant,small,hospitality,200,0.30,0.22
+small_office,small,services,30,0.12,0.25
+small_warehouse,small,logistics,80,0.18,0.15
+small_grocery,small,retail,120,0.20,0.18
+bakery,small,food_production,150,0.28,0.20
+small_hotel,small,accommodation,250,0.27,0.22
+clinic,small,healthcare,90,0.18,0.24
+coworking_space,small,services,60,0.14,0.25

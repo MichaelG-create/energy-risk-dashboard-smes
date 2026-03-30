@@ -23,5 +23,4 @@ models:
       +materialized: table
 
 seeds:
-  energy_risk:
-    +schema: energy_risk
+  energy_risk: {}
