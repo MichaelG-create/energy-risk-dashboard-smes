@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+.env.*
+
+# Data / temp
+data/
+tmp/
+*.log
+
+# Terraform
+infra/.terraform/
+infra/*.tfstate
+infra/*.tfstate.*
+infra/.terraform.lock.hcl
+infra/terraform-sa-key.json
+*.tfplan
+terraform.tfvars
+terraform.tfvars.json
+crash.log
+.terraformrc
+terraform.rc
