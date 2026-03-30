@@ -1,0 +1,4 @@
+segment,avg_kwh_per_day,energy_cost_share,base_margin_pct
+small_retail,50,0.15,0.20
+small_manufacturing,500,0.25,0.18
+restaurant,200,0.30,0.22
