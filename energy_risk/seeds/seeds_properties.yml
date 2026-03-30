@@ -1,0 +1,26 @@
+version: 2
+
+seeds:
+  - name: sme_energy_profile
+    description: >
+      Simplified SME energy profile used to translate wholesale electricity prices
+      into daily energy costs, total costs, revenue and gross profit per segment.
+    columns:
+      - name: segment
+        description: >
+          SME segment identifier (e.g. small_retail, small_manufacturing, restaurant).
+
+      - name: avg_kwh_per_day
+        description: >
+          Average daily electricity consumption for this segment in kWh. Used to
+          convert EUR/kWh prices into daily energy costs.
+
+      - name: energy_cost_share
+        description: >
+          Share of total operating costs that comes from energy (0–1). For example,
+          0.25 means 25% of total costs are energy (used to calculate total costs for the SME).
+
+      - name: base_margin_pct
+        description: >
+          Target gross margin in normal conditions (0–1). For example, 0.20 means
+          a 20% gross margin; used to approximate revenue and gross profit.
