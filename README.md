@@ -4,29 +4,31 @@
 
 Small and medium‑sized enterprises (SMEs) are highly exposed to electricity price volatility. When power prices spike, their operating costs can increase sharply, but they often lack a clear, data‑driven view of:
 
-- How changes in wholesale power prices translate into daily and monthly energy costs.  
+- How changes in wholesale power prices translate into daily/monthly energy costs.  
 - How this affects their gross profit and required revenue.  
-- Which segments are most exposed in different European price zones.
+- Which SME segments are most exposed in different European price zones.
 
 This project addresses that problem by connecting historical European day‑ahead power prices to a simplified SME P&L model and exposing risk signals in a dashboard.
 
-## Solution (high level)
+## Solution 
 
-- Ingest historical energy time series data (Open Power System Data – OPSD) into GCP (GCS + BigQuery). [data.open-power-system-data](https://data.open-power-system-data.org/time_series/)
+- Ingest historical energy time series data (Open Power System Data – OPSD) into GCP (GCS + BigQuery). 
 - Expose the CSV as an external raw table in BigQuery.  
-- Clean and model the data with dbt (staging + mart for energy prices and SME accounting). [docs.getdbt](https://docs.getdbt.com/reference/resource-configs/bigquery-configs)
-- Simulate a simple SME accounting model (revenue, costs, energy cost share, gross profit).  
+- Clean and model the data with dbt (staging + mart for power prices and SME accounting). 
+- Simulate a simple SME accounting model (revenue, total costs, energy costs, gross profit).  
 - Compute daily energy cost and implied revenue/profit for each SME segment and price zone.  
 - Build a BI dashboard in Looker Studio on top of the mart table, with:
-  - Filters for date range, price zone, and segment.  
-  - A time‑series view of energy cost vs gross profit over time.  
-  - A bar chart comparing segments. [lookerstudiomasterclass](https://lookerstudiomasterclass.com/lessons/16-12-connecting-looker-studio-to-bigquery)
+  - Filters for date range, price zone, and SME segment.  
+  - A time‑series view of energy cost vs gross profit.  
+  - A bar chart comparing segments. 
 
 ## Live dashboard
 
-A live version of the Looker Studio dashboard (powered by the `mart_sme_energy_costs` table in BigQuery) is available here:
+A live Looker Studio dashboard (powered by the `mart_sme_energy_costs` table in BigQuery) is available here:
 
-👉 [Public Looker Studio report](https://lookerstudio.google.com/reporting/3e8551a0-9426-4143-991a-14f19e0b2a69)
+👉 [Live dashboard link](https://lookerstudio.google.com/reporting/3e8551a0-9426-4143-991a-14f19e0b2a69)
+
+***
 
 ## Tech stack
 
@@ -41,53 +43,36 @@ A live version of the Looker Studio dashboard (powered by the `mart_sme_energy_c
 
 ## Cloud & Infrastructure
 
-This project runs fully in the cloud on GCP:
+The project runs fully in GCP:
 
 - Storage (data lake): GCS bucket `gs://$BUCKET_NAME`  
 - Data warehouse: BigQuery dataset `$PROJECT_ID.$DATASET_ID` (default `energy_risk`)
 
-### Infrastructure as Code (Terraform)
-
-Basic cloud resources (GCS bucket + BigQuery dataset) are created with Terraform in `infra/`.
-
-From `infra/`:
-
-```bash
-cd infra
-cp terraform.tfvars.example terraform.tfvars  # edit with your values (project_id, bucket_name, bq_dataset_id)
-
-terraform init
-terraform apply
-```
-
-Terraform creates:
-
-- A GCS bucket (`bucket_name`) for raw data.  
-- A BigQuery dataset (`bq_dataset_id`, default `energy_risk`) used by dbt.
-
-***
-
-## How to run the pipeline
-
 ### 0. Prerequisites
 
-1. Choose a GCP project and set:
+1. **Create a GCP project**  
+   - In the Google Cloud Console, create a new project (e.g. `energy-risk-dashboard-smes`).  
+   - Note the project ID.
+
+2. **Set the project ID locally**
 
 ```bash
 export PROJECT_ID="your-gcp-project-id"
 ```
 
-2. Install Google Cloud SDK if needed:  
+3. **Install Google Cloud SDK** if needed:  
    https://cloud.google.com/sdk/docs/install  
 
-3. Initialize and select the project:
+4. **Initialize gcloud and select the project**
 
 ```bash
 gcloud init
 gcloud config set project "$PROJECT_ID"
 ```
 
-4. Set environment variables used by scripts and dbt:
+5. **Configure environment variables**
+
+From the repo root:
 
 ```bash
 cp .env.example .env
@@ -109,37 +94,72 @@ source .env
 set +a
 ```
 
-If you use a service account key:
+### Authentication options
 
-```bash
-export GOOGLE_APPLICATION_CREDENTIALS="$PWD/infra/ingestion-sa-key.json"
-```
+You can run this project in two ways:
 
-### 1. Create GCP resources with Terraform
+1. **As your own user (recommended for review/testing)**
+
+   ```bash
+   gcloud auth application-default login
+   ```
+
+   Make sure your user has:
+   - BigQuery permissions on the project/dataset.  
+   - Storage permissions on the bucket. 
+
+2. **With a dedicated service account (more production‑like)**
+
+   - Create a service account (e.g. `dbt-sa`) and grant:
+     - BigQuery roles (e.g. `roles/bigquery.dataEditor` + `roles/bigquery.jobUser`).  
+     - Storage Object Viewer on the GCS bucket (for the external table). 
+   - Option A (JSON key):
+
+     ```bash
+     export GOOGLE_APPLICATION_CREDENTIALS="$PWD/infra/ingestion-sa-key.json"
+     ```
+
+   - Option B (no key): run dbt/terraform on a VM/runner that uses that service account directly.
+
+For peer review, **option 1** (user ADC) is usually easiest.
+
+***
+
+## 1. Create GCP resources with Terraform
+
+From `infra/`:
 
 ```bash
 cd infra
-cp terraform.tfvars.example terraform.tfvars  # ensure project_id, bucket_name, etc.
-
+cp terraform.tfvars.example terraform.tfvars  # set project_id, bucket_name, bq_dataset_id
 terraform init
 terraform apply
 ```
 
-### 2. Download OPSD time series data
+Terraform creates:
+
+- A GCS bucket (`bucket_name`) for raw data.  
+- A BigQuery dataset (`bq_dataset_id`, default `energy_risk`) used by dbt.
+
+***
+
+## 2. Download OPSD time series data
 
 Source: Open Power System Data – time series (60min, single index). [data.open-power-system-data](https://data.open-power-system-data.org/time_series/2017-03-06/README.md)
 
-From project root:
+From repo root:
 
 ```bash
 uv run python ingestion/download_opsd.py
 ```
 
-This will create:
+This downloads:
 
 - `data/opsd_time_series_60min_singleindex.csv`
 
-### 3. Upload the CSV to GCS
+***
+
+## 3. Upload the CSV to GCS
 
 ```bash
 uv run python ingestion/upload_to_gcs.py
@@ -150,9 +170,12 @@ The script:
 - Reads `BUCKET_NAME` from the environment.  
 - Uploads:
 
-`data/opsd_time_series_60min_singleindex.csv` → `gs://$BUCKET_NAME/raw/opsd/opsd_time_series_60min_singleindex.csv`.
+`data/opsd_time_series_60min_singleindex.csv` →  
+`gs://$BUCKET_NAME/raw/opsd/opsd_time_series_60min_singleindex.csv`.
 
-### 4. Create an external table in BigQuery (raw layer)
+***
+
+## 4. Create an external table in BigQuery (raw layer)
 
 Use the provided shell script:
 
@@ -162,7 +185,7 @@ Use the provided shell script:
 # uv run ./ingestion/create_external_table.sh
 ```
 
-This script uses `PROJECT_ID`, `DATASET_ID`, and `BUCKET_NAME` and runs a BigQuery DDL like:
+This uses `PROJECT_ID`, `DATASET_ID`, and `BUCKET_NAME` and runs a BigQuery DDL similar to:
 
 ```sql
 CREATE OR REPLACE EXTERNAL TABLE `${DATASET_ID}.raw_energy_prices_ext`
@@ -173,10 +196,10 @@ OPTIONS (
 );
 ```
 
-In the external table schema:
+External table schema notes:
 
-- `utc_timestamp` is a TIMESTAMP column (UTC).  
-- `cet_cest_timestamp` is stored as STRING (because the source format includes offsets like `+0100`). [data.open-power-system-data](https://data.open-power-system-data.org/time_series/2017-07-09/)
+- `utc_timestamp`: TIMESTAMP (UTC) – parsed directly from the CSV.  
+- `cet_cest_timestamp`: STRING – kept as text because the format includes offsets like `+0100` that BigQuery’s simple TIMESTAMP parser does not accept.
 
 At this point:
 
@@ -185,11 +208,11 @@ At this point:
 
 ***
 
-## Transformations (dbt)
+## 5. Transformations (dbt)
 
-The dbt project lives in `energy_risk/` and targets the `energy_risk` dataset in BigQuery. [docs.getdbt](https://docs.getdbt.com/best-practices/how-we-structure/2-staging)
+The dbt project lives in `energy_risk/` and targets the `energy_risk` dataset in BigQuery. 
 
-### 1. Sources
+### 5.1 Sources
 
 `models/staging/sources.yml` declares the external raw table:
 
@@ -197,13 +220,19 @@ The dbt project lives in `energy_risk/` and targets the `energy_risk` dataset in
 - Table: `raw_energy_prices_ext`  
 - Documented columns:
   - `utc_timestamp`  
-  - All used day‑ahead price columns, e.g. `AT_price_day_ahead`, `DE_LU_price_day_ahead`, `DK_1_price_day_ahead`, `GB_GBN_price_day_ahead`, `IT_*_price_day_ahead`, `NO_*_price_day_ahead`, `SE_*_price_day_ahead`. [data.open-power-system-data](https://data.open-power-system-data.org/time_series/2020-10-06/README.md)
+  - Used day‑ahead price columns, including:
+    - `AT_price_day_ahead`, `DE_price_day_ahead`, `DE_AT_LU_price_day_ahead`, `DE_LU_price_day_ahead`  
+    - `DK_1_price_day_ahead`, `DK_2_price_day_ahead`  
+    - `GB_GBN_price_day_ahead`, `IE_sem_price_day_ahead`  
+    - `IT_*_price_day_ahead` (various Italian zones)  
+    - `NO_1_price_day_ahead`–`NO_5_price_day_ahead`  
+    - `SE_price_day_ahead`, `SE_1_price_day_ahead`–`SE_4_price_day_ahead`
 
-### 2. Seed: `sme_energy_profile`
+### 5.2 Seed: `sme_energy_profile`
 
 Seed CSV: `energy_risk/seeds/sme_energy_profile.csv`.
 
-Example content:
+Example (shortened):
 
 ```csv
 segment,segment_size,industry,avg_kwh_per_day,energy_cost_share,base_margin_pct
@@ -221,70 +250,62 @@ coworking_space,small,services,60,0.14,0.25
 
 Each row defines a synthetic SME **segment archetype** with:
 
-- `segment`: name of the archetype.  
-- `segment_size`: size bucket (e.g. small).  
-- `industry`: sector (retail, manufacturing, hospitality, etc.).  
-- `avg_kwh_per_day`: average daily electricity consumption (kWh/day).  
-- `energy_cost_share`: share of operating costs that comes from energy (0–1).  
-- `base_margin_pct`: target gross margin under “normal” conditions (0–1). [edfenergy](https://www.edfenergy.com/energywise/small-business-energy-usage)
+- `segment` – segment name.  
+- `segment_size` – size bucket (e.g. small).  
+- `industry` – sector (retail, manufacturing, etc.).  
+- `avg_kwh_per_day` – average daily electricity consumption.  
+- `energy_cost_share` – share of total operating costs that comes from energy (0–1).  
+- `base_margin_pct` – target gross margin in “normal” conditions (0–1). 
 
-### 3. Staging model: `stg_opsd_prices`
+Tests (`seeds/seeds_properties.yml`):
+
+- `not_null` + `unique` on `segment`.  
+- `not_null` on numeric fields.
+
+### 5.3 Staging model: `stg_opsd_prices`
 
 Model: `models/staging/stg_opsd_prices.sql`.
 
-This model:
+Behavior:
 
 - Reads from the external raw table via `{{ source('energy_risk_raw', 'raw_energy_prices_ext') }}`.  
-- Selects `utc_timestamp` and all relevant `*_price_day_ahead` columns, e.g.:
+- Selects `utc_timestamp` and all relevant `*_price_day_ahead` columns.  
+- Unpivots them into a **long format** with one row per `(ts_utc, price_zone)`.
 
-  - `AT_price_day_ahead`  
-  - `DE_price_day_ahead`  
-  - `DE_AT_LU_price_day_ahead`  
-  - `DE_LU_price_day_ahead`  
-  - `DK_1_price_day_ahead`, `DK_2_price_day_ahead`  
-  - `GB_GBN_price_day_ahead`  
-  - `IE_sem_price_day_ahead`  
-  - `IT_*_price_day_ahead`  
-  - `NO_*_price_day_ahead`  
-  - `SE_price_day_ahead`, `SE_1_price_day_ahead`, `SE_2_price_day_ahead`, `SE_3_price_day_ahead`, `SE_4_price_day_ahead`.
+Output schema:
 
-- Unpivots them into a **long format**:
+- `ts_utc` – UTC timestamp of the delivery hour (TIMESTAMP).  
+- `price_zone` – bidding zone / price area code, e.g. `AT`, `DE_LU`, `DK_1`, `GB_GBN`, `IT_NORD`, `NO_1`, `SE_3`.  
+- `price_eur_mwh` – day‑ahead price in EUR/MWh (cast to FLOAT64 for all zones). 
 
-  - `ts_utc` – UTC timestamp (TIMESTAMP).  
-  - `price_zone` – bidding zone / price area (e.g. `AT`, `DE_LU`, `DK_1`, `GB_GBN`, `IT_NORD`, `NO_1`, `SE_3`).  
-  - `price_eur_mwh` – day‑ahead price in EUR/MWh (casted to FLOAT64).
+A `schema.yml` documents the model and adds:
 
-So each row in `stg_opsd_prices` represents:
+- `not_null` tests on `ts_utc`, `price_zone`, `price_eur_mwh`.
 
-> “At timestamp `ts_utc`, in price zone `price_zone`, the day‑ahead price is `price_eur_mwh` EUR/MWh.”
-
-A `schema.yml` file documents the model and adds basic tests:
-
-- `not_null` on `ts_utc`, `price_zone`, `price_eur_mwh`. [docs.getdbt](https://docs.getdbt.com/reference/resource-properties/columns)
-
-### 4. Mart: `mart_sme_energy_costs`
+### 5.4 Mart model: `mart_sme_energy_costs`
 
 Model: `models/marts/mart_sme_energy_costs.sql`.
 
 This model:
 
-- Joins `stg_opsd_prices` with the `sme_energy_profile` seed using a **cross join** (each SME segment is applied to every price zone).  
-- Converts prices from MWh to kWh: `price_eur_kwh = price_eur_mwh / 1000`. [renogy](https://www.renogy.com/blogs/buyers-guide/kwh-to-mwh-conversion-guide)
-- Computes daily energy cost and a simplified P&L for each `(ts_utc, segment, price_zone)`.
+- Joins `stg_opsd_prices` with the `sme_energy_profile` seed via a **cross join**:
+  - Each SME segment is evaluated against every price zone and timestamp.  
+- Converts prices from MWh to kWh: `price_eur_kwh = price_eur_mwh / 1000`. 
+- Computes daily energy cost and a simplified P&L for each `(ts_utc, price_zone, segment)`.
 
 Key fields:
 
-- `ts_utc` – timestamp (used for partitioning).  
+- `ts_utc` – timestamp used for partitioning.  
 - `date` – calendar date `DATE(ts_utc)` for charting.  
 - `price_zone` – price zone / bidding area.  
 - `segment`, `segment_size`, `industry`.  
 - `avg_kwh_per_day`, `energy_cost_share`, `base_margin_pct`.  
 - `energy_cost_eur` – estimated daily energy cost.  
-- `total_cost_eur` – approximate total operating cost given the energy cost share.  
+- `total_cost_eur` – approximate total operating cost.  
 - `revenue_eur` – implied revenue to reach the target margin.  
 - `gross_profit_eur` – simplified gross profit.
 
-The P&L logic:
+P&L formulas:
 
 1. Daily energy cost:
 
@@ -310,34 +331,41 @@ revenue\_eur = \frac{total\_cost\_eur}{1 - base\_margin\_pct}
 gross\_profit\_eur = revenue\_eur - total\_cost\_eur
 \]
 
-These formulas are implemented directly in the mart SQL.
-
 #### Partitioning and clustering
 
-The mart is configured in dbt as:
+Configured in dbt as:
 
-- `materialized = "table"`  
-- `partition_by` on `ts_utc` (TIMESTAMP) with **monthly** granularity.  
-- `cluster_by` on `["price_zone", "segment"]`.
+```jinja
+{{ config(
+    materialized = "table",
+    partition_by = {
+      "field": "ts_utc",
+      "data_type": "timestamp",
+      "granularity": "month"
+    },
+    cluster_by = ["price_zone", "segment"]
+) }}
+```
 
-This reduces the number of partitions (monthly instead of daily) and improves query performance when filtering by time and price zone. [owox](https://www.owox.com/blog/articles/bigquery-partitioned-tables)
+- Monthly time‑unit partitions on `ts_utc` keep the partition count well below the 4,000‑partition job limit while covering the full OPSD history. 
+- Clustering by `price_zone` and `segment` improves performance for typical dashboard queries filtered by these fields. 
 
-#### Tests and documentation
+#### Tests and docs
 
-A `schema.yml` for the mart includes:
+`models/marts/mart_sme_energy_costs.yml` includes:
 
-- Descriptions for key columns.  
+- Column descriptions for all key fields.  
 - `not_null` tests on:
   - `date`  
   - `price_zone`  
   - `segment`  
   - `energy_cost_eur`  
   - `revenue_eur`  
-  - `gross_profit_eur`. [docs.getdbt](https://docs.getdbt.com/reference/resource-properties/data-tests)
+  - `gross_profit_eur`
 
-### 5. Running dbt
+### 5.5 Running dbt
 
-From the project root:
+From repo root:
 
 ```bash
 # Check dbt configuration
@@ -349,23 +377,23 @@ uv run dbt seed --project-dir energy_risk
 # Build everything (staging + mart + tests)
 uv run dbt build --project-dir energy_risk
 
-# Or to focus on the mart and its upstream dependencies:
+# Or: focus on the mart and its dependencies
 uv run dbt build --project-dir energy_risk --select mart_sme_energy_costs+
 ```
 
 This creates:
 
-- `energy_risk.sme_energy_profile` (seed table)  
-- `energy_risk.stg_opsd_prices` (view)  
-- `energy_risk.mart_sme_energy_costs` (table, partitioned & clustered)
+- `energy_risk.sme_energy_profile` (seed table).  
+- `energy_risk.stg_opsd_prices` (view).  
+- `energy_risk.mart_sme_energy_costs` (partitioned & clustered table).
 
 ***
 
-## Dashboard (Looker Studio)
+## 6. Dashboard (Looker Studio)
 
-The dashboard is built on top of `energy_risk.mart_sme_energy_costs` in Looker Studio. [lookerstudiomasterclass](https://lookerstudiomasterclass.com/blog/connect-bigquery-looker-studio-visualization)
+The dashboard is built in Looker Studio on top of `energy_risk.mart_sme_energy_costs`. 
 
-### 1. Connect BigQuery
+### 6.1 Connect BigQuery
 
 1. Go to https://lookerstudio.google.com  
 2. Create a **Blank report**.  
@@ -376,45 +404,42 @@ The dashboard is built on top of `energy_risk.mart_sme_energy_costs` in Looker S
    - Table: `mart_sme_energy_costs`  
 5. Click **Add**, then **Add to report**.
 
-### 2. Filters and controls
+Ensure `date` is typed as **Date** in the data source schema.
+
+### 6.2 Controls
 
 At the top of the report:
 
 - **Date range control**  
-  - Controls the `date` field (set as Date type in the data source).  
-- **Drop‑down filter for `price_zone`**  
-- **Optional drop‑down filter for `segment`**
+  - Controls the `date` dimension (default date field). 
+- **Dropdown filter for `price_zone`**  
+- **Dropdown filter for `segment`**
 
-These controls allow the user to explore different periods, price zones and SME segments.
+These control which period, zones, and segments are filtered across all charts.
 
-### 3. Charts
+### 6.3 Charts
 
-The report includes at least:
+The report includes:
 
 1. **Scorecards (KPIs)**  
-   - Total energy cost for the selected period:  
-     - Metric: `SUM(energy_cost_eur)`  
-   - Total gross profit:  
-     - Metric: `SUM(gross_profit_eur)`  
-   - Optional: total revenue:  
-     - Metric: `SUM(revenue_eur)`.  
+   - Scorecard 1: `SUM(energy_cost_eur)` → “Total energy cost (selected period)”  
+   - Scorecard 2: `SUM(gross_profit_eur)` → “Total gross profit (selected period)”  
+   - Scorecard 3 (optional): `SUM(revenue_eur)` → “Total revenue (selected period)”
 
 2. **Time series chart**  
    - Dimension: `date`  
    - Metrics:  
      - `SUM(energy_cost_eur)`  
      - `SUM(gross_profit_eur)`  
-   - Filters inherited from the date range control and the `price_zone` / `segment` filters.
+   - Both respect date and filter controls.
 
 3. **Bar chart by segment**  
    - Dimension: `segment`  
    - Metric: `SUM(energy_cost_eur)` (and optionally `SUM(gross_profit_eur)`)  
-   - Breakdown dimension (optional): `price_zone`  
-   - Shows which SME archetypes are most exposed to energy cost in each zone.
+   - Optional breakdown: `price_zone` (to compare across zones).
 
-This dashboard closes the loop:
+This end‑to‑end setup demonstrates:
 
-- Cloud infra and ingestion (Terraform, Python, GCS, external table).  
-- Transformations and modeling (dbt, BigQuery).  
-- Business‑oriented visualization (Looker Studio), tied back to the original problem of SME energy risk.
-
+- Cloud infra and ingestion (Terraform, GCS, external table).  
+- Transformation and modeling (dbt, BigQuery, tests & docs).  
+- Business‑oriented analytics (Looker Studio dashboard) tied to the SME energy risk problem.
