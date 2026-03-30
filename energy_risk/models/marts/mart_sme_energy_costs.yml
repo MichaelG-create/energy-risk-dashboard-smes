@@ -1,0 +1,35 @@
+version: 2
+
+models:
+  - name: mart_sme_energy_costs
+    description: "Daily energy cost and profitability per SME segment and price zone."
+    columns:
+      - name: date
+        description: "UTC calendar date."
+        tests:
+          - not_null
+
+      - name: price_zone
+        description: "Pricing zone or bidding area (e.g. AT, DE_LU, GB_GBN)."
+        tests:
+          - not_null
+
+      - name: segment
+        description: "SME segment archetype (e.g. small_retail, restaurant)."
+        tests:
+          - not_null
+
+      - name: energy_cost_eur
+        description: "Estimated daily energy cost in EUR."
+        tests:
+          - not_null
+
+      - name: revenue_eur
+        description: "Estimated daily revenue in EUR based on assumed margin."
+        tests:
+          - not_null
+
+      - name: gross_profit_eur
+        description: "Estimated daily gross profit in EUR."
+        tests:
+          - not_null

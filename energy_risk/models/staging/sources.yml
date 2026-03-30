@@ -1,0 +1,118 @@
+version: 2
+
+sources:
+  - name: energy_risk_raw
+    description: "Raw OPSD time series data exposed as an external table in BigQuery."
+    database: "{{ env_var('PROJECT_ID') }}"
+    schema: "{{ env_var('DATASET_ID') }}"  # e.g. energy_risk
+    tables:
+      - name: raw_energy_prices_ext
+        description: "Day-ahead electricity prices and related time series from OPSD (wide format with one column per price zone or bidding area)."
+        columns:
+          - name: utc_timestamp
+            description: "UTC timestamp of the 60-minute time interval."
+
+          - name: AT_price_day_ahead
+            description: "Day-ahead price for Austria (AT) in EUR/MWh."
+
+          - name: DE_price_day_ahead
+            description: "Day-ahead price for Germany (DE) in EUR/MWh."
+
+          - name: DE_AT_LU_price_day_ahead
+            description: "Day-ahead price for the historical combined bidding zone DE-AT-LU in EUR/MWh."
+
+          - name: DE_LU_price_day_ahead
+            description: "Day-ahead price for the Germany–Luxembourg (DE-LU) bidding zone in EUR/MWh."
+
+          - name: DK_1_price_day_ahead
+            description: "Day-ahead price for Denmark bidding zone DK1 (western Denmark) in EUR/MWh."
+
+          - name: DK_2_price_day_ahead
+            description: "Day-ahead price for Denmark bidding zone DK2 (eastern Denmark) in EUR/MWh."
+
+          - name: GB_GBN_price_day_ahead
+            description: "Day-ahead price for Great Britain (GBN) in EUR/MWh."
+
+          - name: IE_sem_price_day_ahead
+            description: "Day-ahead price for the Single Electricity Market on the island of Ireland (SEM) in EUR/MWh."
+
+          - name: IT_BRNN_price_day_ahead
+            description: "Day-ahead price for the Italian BRNN bidding zone in EUR/MWh."
+
+          - name: IT_CNOR_price_day_ahead
+            description: "Day-ahead price for the Italian CNOR bidding zone in EUR/MWh."
+
+          - name: IT_CSUD_price_day_ahead
+            description: "Day-ahead price for the Italian CSUD bidding zone in EUR/MWh."
+
+          - name: IT_FOGN_price_day_ahead
+            description: "Day-ahead price for the Italian FOGN bidding zone in EUR/MWh."
+
+          - name: IT_GR_price_day_ahead
+            description: "Day-ahead price for the Italian GR bidding zone in EUR/MWh."
+
+          - name: IT_NORD_price_day_ahead
+            description: "Day-ahead price for the Italian NORD bidding zone in EUR/MWh."
+
+          - name: IT_NORD_AT_price_day_ahead
+            description: "Day-ahead price for the Italian NORD–Austria cross-border bidding area in EUR/MWh."
+
+          - name: IT_NORD_CH_price_day_ahead
+            description: "Day-ahead price for the Italian NORD–Switzerland cross-border bidding area in EUR/MWh."
+
+          - name: IT_NORD_FR_price_day_ahead
+            description: "Day-ahead price for the Italian NORD–France cross-border bidding area in EUR/MWh."
+
+          - name: IT_NORD_SI_price_day_ahead
+            description: "Day-ahead price for the Italian NORD–Slovenia cross-border bidding area in EUR/MWh."
+
+          - name: IT_PRGP_price_day_ahead
+            description: "Day-ahead price for the Italian PRGP bidding zone in EUR/MWh."
+
+          - name: IT_ROSN_price_day_ahead
+            description: "Day-ahead price for the Italian ROSN bidding zone in EUR/MWh."
+
+          - name: IT_SACO_AC_price_day_ahead
+            description: "Day-ahead price for the Italian SACO AC bidding zone in EUR/MWh."
+
+          - name: IT_SACO_DC_price_day_ahead
+            description: "Day-ahead price for the Italian SACO DC bidding zone in EUR/MWh."
+
+          - name: IT_SARD_price_day_ahead
+            description: "Day-ahead price for the Italian Sardinia (SARD) bidding zone in EUR/MWh."
+
+          - name: IT_SICI_price_day_ahead
+            description: "Day-ahead price for the Italian Sicily (SICI) bidding zone in EUR/MWh."
+
+          - name: IT_SUD_price_day_ahead
+            description: "Day-ahead price for the Italian SUD bidding zone in EUR/MWh."
+
+          - name: NO_1_price_day_ahead
+            description: "Day-ahead price for Norway bidding zone NO1 in EUR/MWh."
+
+          - name: NO_2_price_day_ahead
+            description: "Day-ahead price for Norway bidding zone NO2 in EUR/MWh."
+
+          - name: NO_3_price_day_ahead
+            description: "Day-ahead price for Norway bidding zone NO3 in EUR/MWh."
+
+          - name: NO_4_price_day_ahead
+            description: "Day-ahead price for Norway bidding zone NO4 in EUR/MWh."
+
+          - name: NO_5_price_day_ahead
+            description: "Day-ahead price for Norway bidding zone NO5 in EUR/MWh."
+
+          - name: SE_price_day_ahead
+            description: "Aggregated day-ahead price for Sweden (all bidding zones) in EUR/MWh."
+
+          - name: SE_1_price_day_ahead
+            description: "Day-ahead price for Sweden bidding zone SE1 in EUR/MWh."
+
+          - name: SE_2_price_day_ahead
+            description: "Day-ahead price for Sweden bidding zone SE2 in EUR/MWh."
+
+          - name: SE_3_price_day_ahead
+            description: "Day-ahead price for Sweden bidding zone SE3 in EUR/MWh."
+
+          - name: SE_4_price_day_ahead
+            description: "Day-ahead price for Sweden bidding zone SE4 in EUR/MWh."
