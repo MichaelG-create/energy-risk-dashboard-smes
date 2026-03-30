@@ -3,10 +3,12 @@ name = "energy-risk-dashboard-smes"
 version = "0.1.0"
 description = "Data pipeline and dashboard to analyze SME exposure to electricity price risk using OPSD data on GCP."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.10,<3.13"
 dependencies = [
     "python-dotenv>=1.0.0",      # load .env for local dev [web:137]
     "requests>=2.31.0",          # download OPSD CSV [web:136]
     "google-cloud-storage>=2.14.0",  # upload to GCS
     "google-cloud-bigquery>=3.14.0", # optional if you use Python to load BQ
+    "dbt-core>=1.8.0",
+    "dbt-bigquery>=1.8.0",
 ]
