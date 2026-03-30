@@ -1,0 +1,4 @@
+project_id   = "your-gcp-project-id"
+region       = "eu"
+bucket_name  = "your-unique-bucket-name"
+bq_dataset_id = "energy_risk"
