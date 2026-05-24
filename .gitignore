@@ -24,3 +24,6 @@ terraform.tfvars.json
 crash.log
 .terraformrc
 terraform.rc
+
+# dbt
+.user.yml
