@@ -1,5 +1,7 @@
 # Energy Risk Dashboard for SMEs
 
+![Energy Risk Dashboard Infographic](docs/Energy_Risk_Dashboard_Infographic.png)
+
 ## Problem
 
 Small and medium‑sized enterprises (SMEs) are highly exposed to electricity price volatility. When power prices spike, their operating costs can increase sharply, but they often lack a clear, data‑driven view of:
